@@ -65,7 +65,7 @@ This project shows experience with **data integration + exploratory systems anal
 
 ### 📄 Full Report & Code
 - **Full PDF Report:** [Obesity_Analysis.pdf](docs/Obesity_Analysis.pdf)  
-- **Reproducible R Markdown Code:** [Obesity_Analysis_Code.Rmd](code/Obesity_Onalysis_Code.Rmd)
+- **Reproducible R Markdown Code:** [Obesity_Analysis_Code.Rmd](code/Obesity_Analysis_Code.Rmd)
 ---
 
 ## 4. **Startup Intelligence Scraper – Structured Evaluation Dataset**
