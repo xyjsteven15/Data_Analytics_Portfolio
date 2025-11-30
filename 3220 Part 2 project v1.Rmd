@@ -1,0 +1,394 @@
+---
+title: "Identifying Predictors of Obesity in the US"
+author: "coldspurs"
+fontsize: 10pt
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+urlcolor: black
+geometry: margin=1in
+header-includes:
+- \usepackage{setspace}
+- \onehalfspacing
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, highlight=FALSE, comment=NA, warnings=FALSE,message=FALSE)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("car")
+library(car)
+library(corrplot)
+library(Hmisc)
+library(olsrr)
+
+```
+
+```{r, echo=FALSE, warning=FALSE,results=FALSE}
+obesity_data <- read.csv("~/Desktop/project1.1data.csv")
+obesity_data$income <- gsub(",", "", obesity_data$income) ## cleaning data for income data, removing commas
+obesity_data$income <- as.numeric(obesity_data$income)
+```
+
+# Pledge
+
+Please type your names in the appropriate space below. Failing to do so will result in a 0 on this assignment.
+
+"We have neither given nor received unauthorized aid on this assignment"
+
+-   Member 1: Daniel Kim
+-   Member 2: Steven Xu
+-   Member 3: Haolin Yang
+
+\newpage
+
+## Introduction
+
+Over 40% of adults and 19% of children in the United States are obese, defined as having a Body Mass Index (BMI) greater than or equal to 30 (National Institutes of Health [NIH], 2024). Moreover, obesity is categorized as a disease by the American Medical Association and the Obesity Medicine Association. The condition has countless harmful impacts, ranging from physiological (diabetes, sleep apnea) to psychological (anxiety, depression) to economic (medical care costs) (Centers for Disease Control and Prevention [CDC], 2022). Unforunately, he obesity issue persists in the U.S. despite the continued efforts of policymakers, physicians, educators, and public health officials. It is evident that there are institutional factors inhibiting the American population from living healthier lives. This analysis aims to take the first step in attacking the obesity epidemic by identifying the most influential predictors.
+
+The data used in this analysis examines the relationship between obesity rates (as a percentage of total state population) and potential risk factors in each of the 50 states in the U.S. The three main research questions guiding this analysis are as follows:
+
+1.  **Do states with higher median incomes have lower obesity rates?** This hypothesis serves as a counterargument to the idea that the obesity issue stems from a lack of proper dietary decision-making skills. Rather, what if a person or family simply cannot afford to live a healthier lifestyle? In the U.S., chain grocery stores, including Whole Foods and Trader Joe’s, have built their reputation around offering healthier food options than their counterparts. Local food co-ops also advertise their commitments to provide “fresh, healthy, and delicious food.” These benefits, however, result in rising prices. A study conducted by the Harvard School of Public Health found that “eating a healthy vs. unhealthy diet costs about \$1.50 more per day” (2014). This amounts to nearly \$550 per year to afford a healthier diet. It is plausible that for 40% of American adults, the economic costs are not worth it.
+
+2.  **Do states with more fast food restaurants have higher obesity rates?** When describing American cuisine, a foreigner is likely to mention the likes of McDonald’s, Taco Bell, and Burger King. While these enterprises are making significant progress in globalizing their menus, the U.S. undoubtedly remains the king of fast food. In regard to fast food revenue in 2023, the U.S. (\$800 million) trails behind only India (\$814 million) and China (\$1.5 billion) (World Population Review, n.d.). The U.S. emerges as the true winner (or the loser, based on interpretation) when considering that both India and China have populations over quadruple that of the U.S. This analysis attempts to determine whether the prevalent fast food culture in the U.S. contributes to its high obesity rates.
+
+3.  **Do certain regions (as defined by the U.S. Census Bureau) have greater obesity rates?** The U.S. Census regions are split into the Northeast, Midwest, West, and South. While the reasoning behind this specific arrangement of regions is not disclosed, it serves as the benchmark for this analysis in terms of grouping states geographically. A potentially significant result regarding the relationship between region and obesity rate could be attributed to numerous factors. For instance, location and climate affect regional food consumption (e.g., greater access to seafood on the coasts). Obesity rates could also be predicted by the style or pace of living within a region; that is to say, those residing in the Northeast’s major cities may tend to use walking as a mode of transportation, while Midwesterners residing in rural areas have no choice but to drive. Exercise has been identified as a combatant to obesity, and some may reap its benefits simply out of necessity. One could come up with countless other hypotheses as to why regional obesity rates differ. This analysis only aims to take the first step: identifying whether there is a significant difference in regional obesity rates. If there is, a wide breadth of subsequent analyses should be pursued.
+
+## Data Description
+
+This study utilizes a combined dataset derived from several reputable sources to delve into potential predictors of obesity rates in the United States. The predictors range from health to lifestyle to demographic factors. Each observation in our sample is a US state (excluding Washington D.C.).
+
+The dataset incorporates the following variables:
+
+-   Obesity Rates (Quantitative, Response Variable): The percent of the state population that is considered obese from the 2022 CDC BRFSS (Behavioral Risk Factor Surveillance System) Survey. Data is sourced from data.gov, a hub of open data provided by the US government.
+
+-   Cell Phone Usage (Quantitative): Average monthly search volume (containing phone-related search terms) per 100,000 residents. This study aimed to examine “which states were most reliant on cell phone usage.” Published by Amerisleep, the study was conducted by four researchers with academic backgrounds from the University of Colorado, Stanford, Oxford University, and Indiana University-Bloomington.
+
+-   Region (Qualitative): Region of the US, as defined by the US Census Bureau. The Census Bureau divides the US into the following four regions: Northeast, South, Midwest, and West.
+
+-   Alcohol Consumption (Quantitative -\> Qualitative): Alcohol consumption per capita from all beverages in the U.S. in 2022, by state. Data is included in Surveillance Report #121 conducted by the National Institute on Alcohol and Alcoholism, a branch of the National Institute of Health (NIH).
+
+-   Median Household Income (Quantitative): Median household income in the United States in 2023, by state. Data provided by the US Census Bureau.
+
+-   Smoking Rates (Qualitative): Percentage of adults who smoke in the United States as of 2022, by state. Survey conducted by the CDC, results published by the Kaiser Family Foundation.
+
+-   Median Age (Qualitative): Median age in the United States in 2022, by state. Data provided by the US Census Bureau.
+
+-   Insufficient Sleep Rate (Quantitative -\> Qualitative): Percentage of adults who reported sleeping, on average, fewer than seven hours in a 24-hour period. Sourced from America's Health Rankings' extensive database on sleep measures.
+
+-   Hospital Density (Qualitative): Number of hospitals per state, as reported by the American Hospital Directory (AHD). Data are “based on each hospital's most recent Medicare cost report”
+
+-   Fast Food Restaurant Density (Qualitative): Fast food restaurants per 100,000 people, by state. Analysis published by NiceRx and data gathered using US Census Bureau data. In this study, fast food refers to limited-service restaurants as defined by the US Census Bureau.
+
+**Manipulations/Transformations**
+
+There are two predictors that have been transformed from quantitative to qualitative variables: alcohol consumption and insufficient sleep. After manipulation, each of these variables now consists of three levels: Low, Moderate, and High. The thresholds for these categories were calculated by taking into account the distribution of each variable. The categories for alcohol consumption are defined as follows: "Low" for consumption below 2 liters per capita, "Moderate" for consumption between 2 and 3 liters per capita, and "High" for consumption above 3 liters per capita. For insufficient sleep rates, "Low" indicates a rate below 33%, "Moderate" is between 33% and 37%, and "High" is above 37%.
+
+**Potential Issues**
+
+By utilizing a diverse array of sources, this analysis incorporates data from several different years. By not having a single, consistent year throughout our data, certain years may contain extreme or unusual data due to factors that we have not accounted for. Nevertheless, all data has been collected within the past five years in order to maintain a sufficient level of relevance.
+
+**Considerations**
+
+The data for seven out of the ten explanatory variables are compiled from government sources. The other three variables are reputable as well. The Amerisleep study was conducted by four researchers with positions in academia at well-known institutions. Next, the American Hospital Directory, containing information on over 7,000 hospitals nationwide. Lastly, America’s Health Rankings, an organization deriving its data from a combination of more than 80 publicly available data sources. Overall, the credibility of the data used in this analysis should be considered adequate.
+
+## Exploratory Data Analysis
+
+```{r, echo=FALSE, fig.width=7, fig.height=4}
+## Use this setting of Code chunk for any plots you wish to make
+## Refer to the Rmarkdown guide for sizing information on your plots
+obesity_data$income <- obesity_data$income / 1000 ## rescaling income, thousands of dollars
+par(mfrow = c(1, 2))  
+hist(obesity_data$obesity, main = "Obesity Rates by State", xlab = "Obesity Rate (%)", ylab = "Frequency of state") ## histogram of response
+# Plot for income
+plot(obesity ~ income, data = obesity_data, xlab = "Median Income", ylab = "Obesity Rate", main = "Obesity vs. Median Income")
+
+```
+
+Figure 1 is a histogram showing the distribution of obesity rates for states. Obesity rates for this analysis serve as the response variable, and it is suitable for multiple linear regression as it is quantitative, continuous, and relatively normal. Figure 2 shows a scatterplot of obesity rates against median income. This scatterplot shows a moderate, negative, and linear relationship between the two variables. This statement is supported by an r-value of -0.673.
+
+```{r, echo=FALSE, fig.width=7, fig.height=3.5}
+par(mfrow = c(1, 2))
+
+# Plot for fast food
+plot(obesity ~ fastfood, data = obesity_data, xlab = "Fast Food Restaurants (per 1,000 people)", ylab = "Obesity Rate", main = "Obesity vs. Fast Food Density")
+
+boxplot(obesity~Alcohol,obesity_data,xlab = "Alcohol Consumption", ylab="Obesity Rate")
+```
+
+Figure 3 shows a scatter plot of fast food density against obesity rates. There does not appear to be any clear trends. Figure 4 illustrates the distribution of obesity rates across different levels of alcohol consumption. The category of low alcohol consumption has the highest median obesity rate, which is surprising at first glance.
+
+```{r, echo=FALSE, fig.width=7, fig.height=3.5}
+
+par(mfrow = c(1, 2))  
+boxplot(obesity~Region,obesity_data,xlab="Region", ylab="obesity rate", main = "Obesity vs. Region")
+
+boxplot(obesity~Sleep,obesity_data,use="complete.obs", xlab = "Insufficient Sleep Rate", ylab="Obesity Rate",main = "Obesity vs. Insufficient Sleep Rate" )
+
+```
+
+Figure 5 is a another side-by-side boxplot showing how regional differences of obesity rates. The Midwest and South are in a similar range for obesity rates, while the Northeast and West also show similar distributions. Figure 6 shows obesity rates against insufficient sleep rates, which have been transformed into three categories. Unsurprisingly, high rates of insufficient sleep appear to have higher rates of obesity, but further analysis will delve into this.
+
+```{r, echo=FALSE, warning=FALSE,results=FALSE}
+## Use this chunk to compute any summary statistics that you want to use
+## in your conclusions. 
+## These will not print in your report
+```
+
+**Variable Screening**
+
+```{r}
+fatmod<-lm(obesity~.-X-Alcohol-Region-Sleep,data=obesity_data)
+summary(fatmod)
+# stepwise regression
+#Default: pent = 0.1, prem = 0.3
+ols_step_both_p(fatmod,pent=0.1,prem=0.3,details=F)
+```
+
+```{r}
+fatmod1<-lm(obesity~smoking+age+income,data=obesity_data)
+summary(fatmod1)
+fatmodvif<-round(vif(fatmod1),3)
+fatmodvif
+mean(fatmodvif)
+```
+
+Based on the vif, there is no potential multicollinearity
+
+Perform nested F test to determine if Alcohol type is significant.
+
+```{r,comment=NA}
+#reduced model
+fatnestmod<-lm(obesity~smoking+age+income,data=obesity_data)
+fatmod2al<-lm(obesity~smoking+age+income+Alcohol,data=obesity_data)
+summary(fatmod2al)
+anova(fatnestmod,fatmod2al)
+```
+
+Perform nested F test to determine if Region type is significant.
+
+```{r,comment=NA}
+fatmod2re<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+summary(fatmod2re)
+anova(fatmod1,fatmod2re)
+```
+
+-   *Hypotheses*:
+    -   $H_0: \beta_1=\beta_2=0$ (the Region does not contribute to predicting obesity)
+    -   $H_a:\beta_1, \beta_2 \neq 0$ (the Region contributes to predicting obesity )
+-   *Distribution of test statistic*: F 2 with 43 DF
+-   *Test Statistic*: F=12.198
+-   *Pvalue*: 6.589e-06
+-   *Decision*: 6.589e-06\<0.05 -\> REJECT H0
+-   *Conclusion*: The Region is significant at predicting obesity. We keep all dummy variables in the model and not test them individually.
+
+Perform nested F test to determine if Sleep type is significant.
+
+```{r,comment=NA}
+fatmod3sl<-lm(obesity~smoking+age+income+Region+Sleep,data=obesity_data)
+fatmod4<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+summary(fatmod3sl)
+anova(fatmod4,fatmod3sl)
+```
+
+-   *Hypotheses*:
+    -   $H_0: \beta_1=\beta_2=0$ (the sleep sufficiency does not contribute to predicting obesity)
+    -   $H_a:\beta_1, \beta_2 \neq 0$ (the sleep sufficiency contributes to predicting obesity )
+-   *Distribution of test statistic*: F 2 with 43 DF
+-   *Test Statistic*: F=1.18
+-   *Pvalue*: 0.3285
+-   *Decision*: 0.3285\>0.05 -\> FAIL TO REJECT H0
+-   *Conclusion*: The Sleep sufficiency is not significant at predicting obesity. We will remove both dummy variables in the model and not test them individually.
+
+**interaction** interaction between region and income
+
+```{r,comment=NA}
+fatmodint3<-lm(obesity~smoking+age+income*Region,data=obesity_data)
+fatmod4<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+summary(fatmodint3)
+anova(fatmod4,fatmodint3)
+```
+
+there is no interaction between region and age
+
+interaction between region and smoking
+
+```{r,comment=NA}
+fatmodint4<-lm(obesity~smoking*Region+age+income,data=obesity_data)
+fatmod4<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+summary(fatmodint4)
+anova(fatmod4,fatmodint4)
+```
+
+there is no interaction between region and smoking
+
+interaction between region and age
+
+```{r,comment=NA}
+fatmodint5<-lm(obesity~smoking+age*Region+income,data=obesity_data)
+fatmod4<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+summary(fatmodint5)
+anova(fatmod4,fatmodint5)
+```
+
+there is no interaction between
+
+**residual**
+
+```{r}
+#There are a few options to view plots for assumptions
+obemod<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+residualPlots(obemod,tests=F)
+plot(obemod, which=c(1,2))
+hist(residuals(obemod))
+
+```
+
+-   Lack of Fit: Residual Plots; since there wasn't a clear pattern showed from the residual plots sum of the residuals are zero. The box plot centered at zero and there is no clear skewness.
+-   Constant Variance: Residual Plots and Residual vs Fitted; in this residual vs. fitted plot, there are no "fanning" nor "funnel" shape.The spread of the residuals seems consistent across fitted values, this assumption appears to hold.
+-   Normality: QQ Plot and Histogram of Residuals;No, the histogram of the residuals shows a largly normal distribution, with a symmetric bell-shaped curve. The Q-Q plot shows that most of the points lie on or near the diagonal line, indicating that the residuals are approximately normally distributed. The plot wasn't against normality.
+-   Independence: We do not have time series data. For the sake of this class we will not explore this assumption other than stating we do not believe the observations are dependent on each other.
+
+```{r}
+#Cooks Distance Thresholds
+plot(obemod,which=4)
+
+#Leverage vs Studentized Residuals
+influencePlot(obemod,fill=F)
+
+#Deleted Studentized Residuals vs PRedicted values
+ols_plot_resid_stud_fit(obemod)
+
+
+
+
+
+```
+
+Based on cook's distance, 6, 9, and 44 are the influential points.
+
+The statistics of the hat values indicates that observation 2, 44 have a high hat value compared to the threshold. The influence plot shows that observation 6, 8, have high studentized residual.
+
+Based on the threshold of ±2 of the deleted Studentized Residuals, observations 6, 8, 45 are potential outliers.
+
+Afterwards, we could remove the most influential point(s) from our analysis, but this is not necessary. Instead, we could present the analysis with and without the observations and note the concern in a conclusion. Also, we could try to fit a different model, and maybe the observation is influential because the model is not appropriate.
+
+Also, we could consider the other influential diagnostics (DFFits + DFBetas), and compare them with the average value.
+
+```{r}
+
+obesity_data <- obesity_data[-c(8,44), ]
+obemodnew<-lm(obesity~smoking+age+income+Region,data=obesity_data)
+summary(obemodnew)
+wt <- 1 / lm(abs(obemodnew$residuals) ~ obemodnew$fitted.values)$fitted.values^2
+wlsmodel <- lm(obesity~smoking+age+income+Region, data = obesity_data, weights = wt)
+summary(wlsmodel)
+
+
+# Format it into a nice table
+
+```
+
+
+GLobal F test - Hypotheses: - $H_0: \beta_1= \beta_2=\beta_3=\beta_4=\beta_5=\beta_6=0$ (the model is not adequate) - $H_a$:at least one of $\beta_1 , \beta_2 , \beta_3,\beta_4$ does not equal 0 (the model is adequate) - *Distribution of test statistic*: F with 6, 43 DF - *Test Statistic*: F=30.7 - *Pvalue*: \<0.0001 - *Decision*: 0.0001\<0.05 -\> REJECT H0 - *Conclusion*: The model is adeqate.
+
+**Root MSE**: 1.794. This measures the average deviation of the observed values from the values predicted by the model. In practical terms, it indicates that the actual values of obesity deviate by approximately 1.794 units (on average) from the predicted values.
+
+**Adjusted R-Sq**: 0.7843 After accounting for the number of predictors and observations, 78.43% of the variation in weighted medal count is explained by the model with GDP and total athletes.
+
+## Conclusions
+
+This data is versatile as the predictors span across several different areas of study, including demographic, geographic, physical, and economical. It is promising to see that there are some apparent trends that are immediately noticeable from the exploratory data analysis, such as the regional difference in obesity rates (Figure 6) or the potential/surprising relationship between alcohol consumption levels and obesity rates (Figure 4). Although not visualized, smoking rates have a relatively strong, positive correlation with obesity rates. he In regard to the initial research questions, 1) there appears to be a moderate, negative correlation between median income and obesity rates; 2) the 4 US regions seem to be split in half in terms of having relatively high or relatively low obesity rates; and 3) there was little evidence for a correlation between fast food restaurant density and obesity rates.
+
+However, it is important to thoroughly test these theories through regression analysis. We will move forward with all of our predictors, but we will willingly be ready to remove hospital density as it showed virtually no correlation with obesity rates (r = 0.02) in our EDA. Otherwise, we will initially hold a lenient policy toward removing variables as we want to ensure that we do not eliminate a significant predictor in the early stages of analysis. The next steps will include checking for multicollinearity within our quantitative predictors, performing linear regression (including Global F and t-tests), and considering any possible interaction effects or higher–order terms.
+
+```{r}
+obesity_mod99 <- lm(obesity~smoking+age+income+Region,data=obesity_data)
+obesity_mod99vif<-round(vif(obesity_mod99),3)
+obesity_mod99vif
+mean(obesity_mod99vif)
+```
+
+\newpage
+
+## Appendix A: Data Dictionary
+
+|      **Variable Name**       | **Abbreviated Name** |                                                          **Description**                                                          |
+|:----------------------:|:----------------------:|:----------------------:|
+|            State             |        state         |                                                             US state                                                              |
+|      Obesity Percentage      |       obesity        |                       The percent of the state population that is considered obese from the 2022 CDC BRFSS                        |
+|       Hospital Density       |      hospitals       |                                                   Number of hospitals per state                                                   |
+|          US Region           |        Region        |                                               Region as defined by US Census Bureau                                               |
+|       Cell Phone Usage       |    cellphone_use     |                   Average monthly search volume (containing phone-related search terms) per 100,000 residents.                    |
+|          Median Age          |         age          |                     Median age in the United States in 2022, by state. Data provided by the US Census Bureau.                     |
+|         Smoking Rate         |       Smoking        |                                                  Percentage of smokers, by state                                                  |
+|        Median Income         |        income        |                                                      Median income of state                                                       |
+|     Alcohol Consumption      |       Alcohol        |                                        Alcohol Consumption, categorized into three levels                                         |
+|   Insufficient Sleep Rate    |       Sleeping       | Percentage of adults who reported sleeping, on average, fewer than seven hours in a 24-hour period, categorized into three levels |
+| Fast Food Restaurant Density |      fast_food       |                                              Fast food restaurants per 100,000 people                                             |
+
+\newpage
+
+## Appendix B: Data Rows
+
+```{r, echo=FALSE}
+head(obesity_data)
+
+```
+
+
+```{r, echo=FALSE}
+
+
+```
+
+\newpage
+
+## Appendix C: References
+
+### Introduction
+
+1.  List your background citations here.
+
+    Centers for Disease Control and Prevention. (2022, July 15). Consequences of obesity. Centers for Disease Control and Prevention. <https://www.cdc.gov/obesity/basics/consequences.html>
+
+    Centers for Disease Control and Prevention. (n.d.). New CDC data show adult obesity prevalence remains high. Centers for Disease Control and Prevention. <https://www.cdc.gov/media/releases/2024/p0912-adult-obesity.html>
+
+    Eating healthy vs. unhealthy diet costs about \$1.50 more per day. News. (2014, January 13). <https://www.hsph.harvard.edu/news/press-releases/healthy-vs-unhealthy-diet-costs-1-50-more/>
+
+    Fast Food Consumption by Country 2024. Fast food consumption by country 2024. (n.d.). <https://worldpopulationreview.com/country-rankings/fast-food-consumption-by-country>
+
+    U.S. Department of Health and Human Services. (2024, March 8). Research in context: Obesity and metabolic health. National Institutes of Health. <https://www.nih.gov/news-events/nih-research-matters/research-context-obesity-metabolic-health>
+
+    Why obesity is a disease: Unpacking the controversy and causes. Obesity Medicine Association. (n.d.). <https://obesitymedicine.org/blog/why-is-obesity-a-disease/>
+
+    World Health Organization. (n.d.). Obesity and overweight. World Health Organization. <https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight>
+
+2.  List your data citations here
+
+    KFF. (2024, October 18). Adults who report smoking by sex. <https://www.kff.org/other/state-indicator/smoking-adults-by-sex/>
+
+    American Hospital Directory. (n.d.). Hospital statistics by state. <https://www.ahd.com/state_statistics.html>
+
+    U.S. Census Bureau. (2024, August 30). Historical income tables: Households. <https://www.census.gov/data/tables/time-series/demo/income-poverty/historical-income-households.html>
+
+    U.S. Census Bureau. (n.d.). Explore census data. <https://data.census.gov/table/ACSDT5Y2020.B01002>
+
+    Amerisleep. (2023, December 13). Cellphone use statistics by state. <https://amerisleep.com/blog/cellphone-use-statistics-by-state/>
+
+    U.S. Census Bureau. (n.d.). Census regions and divisions of the United States. <https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf>
+
+    America's Health Rankings. (n.d.). Explore insufficient sleep in the United States. <https://www.americashealthrankings.org/explore/measures/sleep>
+
+    NiceRx. (n.d.). The fast food capitals of America. <https://www.nicerx.com/fast-food-capitals/>
+
+    Lake County Illinois GIS. (2024, September 20). Lake County, Illinois - National obesity by state. <https://catalog.data.gov/dataset/national-obesity-by-state-d765a>
+
+    National Institute on Alcohol Abuse and Alcoholism. (n.d.). Surveillance reports. <https://www.niaaa.nih.gov/publications/surveillance-reports>
+
+    Trust for America’s Health. (2023). Obesity report. <https://www.tfah.org/wp-content/uploads/2023/09/TFAH-2023-ObesityReport-FINAL.pdf>
+    
+    Zach. (2020, December 31). How to Perform Weighted Least Squares Regression in R. Statology. https://www.statology.org/weighted-least-squares-in-r/
