@@ -94,4 +94,4 @@ Shows experience building **clean, accurate system-of-record datasets** from mes
 # 📫 Contact
 **Email:** yx375@cornell.edu  
 **Location:** Ithaca, NY  
-**LinkedIn:** *add your link here*  
+**LinkedIn:** https://www.linkedin.com/in/steven-xu-b4544a326/
