@@ -63,6 +63,9 @@ Built a unified analytical dataset by combining multiple heterogeneous public so
 **Why it’s relevant:**  
 This project shows experience with **data integration + exploratory systems analysis**, just like Lightpath’s network reporting & data audits.
 
+### 📄 Full Report & Code
+- **Full PDF Report:** [Obesity_Analysis.pdf](docs/Obesity_Analysis.pdf)  
+- **Reproducible R Markdown Code:** [Obesity_Analysis.Rmd](code/Obesity_Onalysis.Rmd)
 ---
 
 ## 4. **Startup Intelligence Scraper – Structured Evaluation Dataset**
