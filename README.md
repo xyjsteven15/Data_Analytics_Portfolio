@@ -1,7 +1,7 @@
 # Steven Xu – Analytics & Systems Portfolio
 
 Hi! I'm Steven (Yijue) Xu, a Biometry & Statistics student at Cornell University focusing on  
-**data quality**, **Python/SQL analytics**, **systems thinking**, and **automated data pipelines**.
+**data quality**, **Python/SQL analytics**, and **automated data pipelines**.
 
 This portfolio highlights several analytics & systems projects aligned with roles in  
 **Systems Analysis, Data Analytics, Network Data Quality, and Operations Reporting**.
@@ -48,7 +48,7 @@ This mirrors Lightpath’s work with **inconsistent network data**, requiring tr
 ---
 
 ## 3. **U.S. Obesity Drivers – Multi-Dataset Integration**
-**Tools:** Python, scikit-learn, EDA, classification & regression  
+**Tools:** Python, EDA through R studio, classification & regression  
 **Skills Demonstrated:** working with disparate public datasets, ad-hoc analysis, data quality handling
 
 **Overview:**  
